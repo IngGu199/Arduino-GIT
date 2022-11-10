@@ -36,7 +36,9 @@ with mp_hands.Hands(model_complexity = 1,min_detection_confidence=0.5, min_track
             ]
             
             fingers_dis = list(map(lambda xy : int(((middle_po[0]-xy[0])**2 +(middle_po[1]-xy[1])**2)**(1/2)),fingers_position))
-            print(fingers_dis)
+            arduino_input_dis = f"{fingers_dis[0]} {fingers_dis[1]} {fingers_dis[2]} {fingers_dis[3]} {fingers_dis[4]}\n"
+            #arduino.write(b'OFF')
+            print(arduino_input_dis.encode())
         cv2.imshow('Fingers', image)
         if cv2.waitKey(1) == 27:
             break

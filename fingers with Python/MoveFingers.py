@@ -9,9 +9,13 @@ mp_hands = mp.solutions.hands
 cap = cv2.VideoCapture(0)
 _,img = cap.read()
 h,w,c = img.shape
-arduino = serial.Serial('COM15',9600)
+arduino = serial.Serial('COM15',9600,timeout = 0.5,writeTimeout=0)
 con = 0
 
+cal_degrees = lambda x,NMI,NMA,MMI,MMA : (x-NMI) * (MMA - MMI) / (NMA - NMI) + MMI
+
+min_degrees = [0,0,0,0,0]
+max_degrees = [180,180,180,180,180]
 
 with mp_hands.Hands(model_complexity = 1,min_detection_confidence=0.5, min_tracking_confidence=0.5, max_num_hands = 1) as hands: 
     while cap.isOpened():
@@ -28,38 +32,42 @@ with mp_hands.Hands(model_complexity = 1,min_detection_confidence=0.5, min_track
                                         mp_drawing.DrawingSpec(color=(0, 0, 0), thickness=2, circle_radius=4),
                                         mp_drawing.DrawingSpec(color=(0, 0, 0), thickness=2, circle_radius=2))
             
-            middle_po = np.array([results.multi_hand_landmarks[0].landmark[0].x*w,results.multi_hand_landmarks[0].landmark[0].y*h],dtype = np.int64)
+            middle_po = np.array([results.multi_hand_landmarks[0].landmark[0].x*w,results.multi_hand_landmarks[0].landmark[0].y*h])
             
             fingers_position = [
-                np.array([results.multi_hand_landmarks[0].landmark[4].x*w,results.multi_hand_landmarks[0].landmark[4].y*h],dtype = np.int64),
-            np.array([results.multi_hand_landmarks[0].landmark[8].x*w,results.multi_hand_landmarks[0].landmark[8].y*h],dtype = np.int64),
-            np.array([results.multi_hand_landmarks[0].landmark[12].x*w,results.multi_hand_landmarks[0].landmark[12].y*h],dtype = np.int64),
-            np.array([results.multi_hand_landmarks[0].landmark[16].x*w,results.multi_hand_landmarks[0].landmark[16].y*h],dtype = np.int64),
-            np.array([results.multi_hand_landmarks[0].landmark[20].x*w,results.multi_hand_landmarks[0].landmark[20].y*h],dtype = np.int64)
-            ]
-            fingers_Propo = [
-                np.array([results.multi_hand_landmarks[0].landmark[1].x*w,results.multi_hand_landmarks[0].landmark[1].y*h],dtype = np.int64),
-            np.array([results.multi_hand_landmarks[0].landmark[5].x*w,results.multi_hand_landmarks[0].landmark[5].y*h],dtype = np.int64),
-            np.array([results.multi_hand_landmarks[0].landmark[9].x*w,results.multi_hand_landmarks[0].landmark[9].y*h],dtype = np.int64),
-            np.array([results.multi_hand_landmarks[0].landmark[13].x*w,results.multi_hand_landmarks[0].landmark[13].y*h],dtype = np.int64),
-            np.array([results.multi_hand_landmarks[0].landmark[17].x*w,results.multi_hand_landmarks[0].landmark[17].y*h],dtype = np.int64)
+                [results.multi_hand_landmarks[0].landmark[4].x*w,results.multi_hand_landmarks[0].landmark[4].y*h],
+            [results.multi_hand_landmarks[0].landmark[8].x*w,results.multi_hand_landmarks[0].landmark[8].y*h],
+           [results.multi_hand_landmarks[0].landmark[12].x*w,results.multi_hand_landmarks[0].landmark[12].y*h],
+            [results.multi_hand_landmarks[0].landmark[16].x*w,results.multi_hand_landmarks[0].landmark[16].y*h],
+            [results.multi_hand_landmarks[0].landmark[20].x*w,results.multi_hand_landmarks[0].landmark[20].y*h]
             ]
             
-            fingers_dis = list(map(lambda xy : int(((middle_po[0]-xy[0])**2 +(middle_po[1]-xy[1])**2)**(1/2)),fingers_position))
-            fingers_Propo = list(map(lambda xy : int(((middle_po[0]-xy[0])**2 +(middle_po[1]-xy[1])**2)**(1/2)),fingers_Propo))
-            arduino_input_dis = f"{fingers_dis[0]},{fingers_dis[1]},{fingers_dis[2]},{fingers_dis[3]},{fingers_dis[4]}\n"
+            fingers_Propo = [
+                [results.multi_hand_landmarks[0].landmark[1].x*w,results.multi_hand_landmarks[0].landmark[1].y*h],
+            [results.multi_hand_landmarks[0].landmark[5].x*w,results.multi_hand_landmarks[0].landmark[5].y*h],
+            [results.multi_hand_landmarks[0].landmark[9].x*w,results.multi_hand_landmarks[0].landmark[9].y*h],
+            [results.multi_hand_landmarks[0].landmark[13].x*w,results.multi_hand_landmarks[0].landmark[13].y*h],
+            [results.multi_hand_landmarks[0].landmark[17].x*w,results.multi_hand_landmarks[0].landmark[17].y*h]
+            ]
+            
+            fingers_dis = np.array(list(map(lambda xy : int(((middle_po[0]-xy[0])**2 +(middle_po[1]-xy[1])**2)**(1/2)),fingers_position)))
+            fingers_Propo = np.array(list(map(lambda xy : int(((middle_po[0]-xy[0])**2 +(middle_po[1]-xy[1])**2)**(1/2)),fingers_Propo)))
+            
             Pkey = cv2.waitKey(1)
             if Pkey == ord('s'):
-                arduino_input_dis = f"S{fingers_dis[0]},{fingers_dis[1]},{fingers_dis[2]},{fingers_dis[3]},{fingers_dis[4]}\n"
-                arduino.write(arduino_input_dis.encode())
-                con = 2
+                
+                min_distance = fingers_dis.copy()
+                NBD = max_distance/pro_distance
+                NSD = min_distance/pro_distance
+                
                 print("Small Succ")
                 lTime = time.time()
+                con = 2
             elif Pkey == ord('b'):
-                arduino_input_dis = f"M{fingers_Propo[0]},{fingers_Propo[1]},{fingers_Propo[2]},{fingers_Propo[3]},{fingers_Propo[4]}\n"
-                arduino.write(arduino_input_dis.encode())
-                arduino_input_dis = f"B{fingers_dis[0]},{fingers_dis[1]},{fingers_dis[2]},{fingers_dis[3]},{fingers_dis[4]}\n"
-                arduino.write(arduino_input_dis.encode())
+                
+                max_distance = fingers_dis.copy()
+                pro_distance = fingers_Propo.copy()
+                
                 print("Big Succ")
             elif Pkey == ord('c'):
                 if con == 2:
@@ -69,11 +77,21 @@ with mp_hands.Hands(model_complexity = 1,min_detection_confidence=0.5, min_track
             if con == 2:    
                 if time.time() - lTime > 2:
                     print("GoGo")
-                    arduino_input_dis = f"M{fingers_Propo[0]},{fingers_Propo[1]},{fingers_Propo[2]},{fingers_Propo[3]},{fingers_Propo[4]}\n"
-                    arduino.write(arduino_input_dis.encode())
-                    arduino_input_dis = f"{fingers_dis[0]},{fingers_dis[1]},{fingers_dis[2]},{fingers_dis[3]},{fingers_dis[4]}\n"
-                    arduino.write(arduino_input_dis.encode())
-                    lTime = time.time()
+                    anything_out_dis = list(map(cal_degrees, fingers_dis, NSD*fingers_Propo,NBD*fingers_Propo, min_degrees,max_degrees))
+                    if anything_out_dis[0] < 135:
+                        anything_out_dis[0] = 135
+                    elif anything_out_dis[0] > 180:
+                        anything_out_dis[0] = 180
+                    for k in range(1,5):
+                        if anything_out_dis[k] > 180:
+                            anything_out_dis[k] = 180
+                        elif anything_out_dis[k] < 0:
+                            anything_out_dis[k] = 0
+                    arduino_dis = f"{int(anything_out_dis[0])},{int(anything_out_dis[1])},{int(anything_out_dis[2])},{int(anything_out_dis[3])},{int(anything_out_dis[4])}\n"
+                    print(arduino_dis)
+                    arduino.write(arduino_dis.encode())
+                    
+                    lTime = time.time()                    
         cv2.imshow('Fingers', image)
         if cv2.waitKey(1) == 27:
             break

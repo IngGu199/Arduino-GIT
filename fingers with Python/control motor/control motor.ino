@@ -19,7 +19,7 @@ void setup() {
 }
 
 String str="180,180,180,180,180\n";
-int CoP = 0,Check = 0;
+int Check = 0;
 int MDegree[5] = {0};
 
 void loop() {
@@ -31,17 +31,12 @@ void loop() {
   int Co3 = str.indexOf(",",Co2+1);
   int Co4 = str.indexOf(",",Co3+1);
   int strlength = str.length(); // 문자열 길이
-  int De1 = str.substring(CoP, Co1).toInt(); // 첫번째 토큰
-  int De2 = str.substring(Co1+1, Co2).toInt(); // 두번째 토큰
-  int De3 = str.substring(Co2+1,Co3).toInt(); // 세번째 토큰
-  int De4 = str.substring(Co3+1,Co4).toInt();
-  int De5 = str.substring(Co4+1,strlength-1).toInt();
+  MDegree[0] = str.substring(0, Co1).toInt(); // 첫번째 토큰
+  MDegree[1] = str.substring(Co1+1, Co2).toInt(); // 두번째 토큰
+  MDegree[2] = str.substring(Co2+1,Co3).toInt(); // 세번째 토큰
+  MDegree[3] = str.substring(Co3+1,Co4).toInt();
+  MDegree[4] = str.substring(Co4+1,strlength-1).toInt();
 
-  MDegree[0] = De1;
-  MDegree[1] = De2;
-  MDegree[2] = De3;
-  MDegree[3] = De4;
-  MDegree[4] = De5;
   servo1.write(MDegree[0]);
   servo2.write(MDegree[1]);
   servo3.write(MDegree[2]);

@@ -78,15 +78,15 @@ with mp_hands.Hands(model_complexity = 1,min_detection_confidence=0.5, min_track
                 if time.time() - lTime > 2:
                     print("GoGo")
                     anything_out_dis = list(map(cal_degrees, fingers_dis, NSD*fingers_Propo,NBD*fingers_Propo, min_degrees,max_degrees))
-                    if anything_out_dis[0] < 135:
-                        anything_out_dis[0] = 135
-                    elif anything_out_dis[0] > 180:
-                        anything_out_dis[0] = 180
+                    if anything_out_dis[0] < min_degrees[0]:
+                        anything_out_dis[0] = min_degrees[0]
+                    elif anything_out_dis[0] > max_degrees[0]:
+                        anything_out_dis[0] = max_degrees[0]
                     for k in range(1,5):
-                        if anything_out_dis[k] > 180:
-                            anything_out_dis[k] = 180
-                        elif anything_out_dis[k] < 0:
-                            anything_out_dis[k] = 0
+                        if anything_out_dis[k] > max_degrees[k]:
+                            anything_out_dis[k] = max_degrees[k]
+                        elif anything_out_dis[k] < min_degrees[k]:
+                            anything_out_dis[k] = min_degrees[k]
                     arduino_dis = f"{int(anything_out_dis[0])},{int(anything_out_dis[1])},{int(anything_out_dis[2])},{int(anything_out_dis[3])},{int(anything_out_dis[4])}\n"
                     print(arduino_dis)
                     arduino.write(arduino_dis.encode())
